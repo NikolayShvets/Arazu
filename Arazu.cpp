@@ -6,7 +6,7 @@
 #include <fstream>
 #include <vector>
 using namespace std;
-
+vector<string> temp;
 bool map_change{ true };
 bool gameOver{ false }; //признак законченности игры
 ifstream current_map; // файл текущей карты 
@@ -46,7 +46,7 @@ struct  Character
 	double _mana{ 100.0 }; //количество маны(выносливости)
 	int ch_x{ 0 }; //вниз
 	int ch_y{ 0 }; //вправо
-	int visibility_x{ 2 }, visibility_y{ 6 };
+	int visibility_x{ 6 }, visibility_y{ 18 };
 	move_var ch_move;
 };
 Character character;
@@ -146,6 +146,7 @@ void DrawMap(char skin, string map_name, move_var ch_move)
 			//записваем строку str. Цикл повторяется, пока в файле не кончатся строки. В итоге весь файл запишется в вектор строк (построчно).
 			//cout << current_draw_map.back()<<endl;
 		}
+		temp = current_draw_map;
 		map_change = false; //возвращаем значение false флагу изменения карты. (чтобы отрисовывать карту только тогда, когда что то на нец изменилось)
 		height = current_draw_map.size(); //167 Х. Высота - количество элементов в векторе строк (т.е количество строк в файле)
 		width = current_draw_map.back().size();//38 Y. Ширина - количество символов в каждой строке.
@@ -162,17 +163,18 @@ void DrawMap(char skin, string map_name, move_var ch_move)
 			if ((i == character.ch_x) && (j == character.ch_y))
 			{
 				//заменяем этот элемент на символ персонажа
-				current_draw_map[i][j] = character.ch_skin;
+				//current_draw_map[i][j] = character.ch_skin;
 				//в предыдущее место нахождения персонажа рисуем пробел в зависимости от направления движения
 				switch (character.ch_move)
 				{
 					//поменять эти выражения таким образом, чтобы после хода персонажа за ним рисовался не пробел, а тот элемент, который он занял
 					// либо же сделать так, чтобы ходить можно было только по пробелам
-				case LEFT: current_draw_map[i][j + 1] = ' '; break;
-				case UP: current_draw_map[i + 1][j] = ' '; break;
-				case RIGHT: current_draw_map[i][j - 1] = ' '; break;
-				case DOWN: current_draw_map[i - 1][j] = ' '; break;
+				case LEFT: current_draw_map[i][j + 1] = temp[i][j+1]; break;
+				case UP: current_draw_map[i + 1][j] = temp[i+1][j]; break;
+				case RIGHT: current_draw_map[i][j - 1] = temp[i][j-1]; break;
+				case DOWN: current_draw_map[i - 1][j] = temp[i-1][j]; break;
 				}
+				current_draw_map[i][j] = character.ch_skin;
 			}
 		}
 		//отрисовывка
@@ -187,7 +189,7 @@ void DrawMap(char skin, string map_name, move_var ch_move)
 				if (((n <= character.ch_y - character.visibility_y) || (n >= character.ch_y + character.visibility_y)) && (n != 0) && (n != width - 1) && (n != character.ch_y))
 				{
 					//меняем такой элемент на символ с кодом 176
-					current_draw_map[i][n] = 176;
+					current_draw_map[i][n] = 177;
 				}
 			}
 			//отрисовываем строку
@@ -199,7 +201,7 @@ void DrawMap(char skin, string map_name, move_var ch_move)
 				{
 					//сделать так, чтобы рисовать не пробелы, а те символы, которые были затерты туманом войны
 					//например запимнить состояние вектора до отрисовки и обращаться к его соответсвтующему элементу
-					current_draw_map[i][n] = ' ';
+					current_draw_map[i][n] = temp[i][n];
 				}
 			}
 		}
@@ -211,7 +213,7 @@ void DrawMap(char skin, string map_name, move_var ch_move)
 			{
 				if ((n != 0) && (n != width - 1))
 				{
-					current_draw_map[i][n] = 176;
+					current_draw_map[i][n] = 177;
 				}
 			}
 
@@ -222,7 +224,7 @@ void DrawMap(char skin, string map_name, move_var ch_move)
 				if ((n != 0) && (n != width - 1))
 				{
 					//аналогично
-					current_draw_map[i][n] = ' ';
+					current_draw_map[i][n] = temp[i][n];
 				}
 			}
 		}
@@ -256,10 +258,10 @@ void Logic()
 	//в зависимости от текущего значения поля ch_move меняем координаты персонажа, вызываем функцию отрисовки карты
 	switch (character.ch_move)
 	{
-	case LEFT: if (character.ch_y > 1) --character.ch_y; DrawMap(character.ch_skin, current_map_name, character.ch_move); break;
-	case UP: if (character.ch_x > 1) --character.ch_x; DrawMap(character.ch_skin, current_map_name, character.ch_move); break;
-	case RIGHT: if (character.ch_y < width - 2) ++character.ch_y; DrawMap(character.ch_skin, current_map_name, character.ch_move); break;
-	case DOWN: if (character.ch_x < height - 2) ++character.ch_x; DrawMap(character.ch_skin, current_map_name, character.ch_move); break;
+	case LEFT: if ((character.ch_y > 1)&&(current_draw_map[character.ch_x][character.ch_y - 1] == ' ')) --character.ch_y; DrawMap(character.ch_skin, current_map_name, character.ch_move); break;
+	case UP: if ((character.ch_x > 1) && (current_draw_map[character.ch_x - 1][character.ch_y] == ' ')) --character.ch_x; DrawMap(character.ch_skin, current_map_name, character.ch_move); break;
+	case RIGHT: if ((character.ch_y < width - 2) && (current_draw_map[character.ch_x][character.ch_y + 1] == ' ')) ++character.ch_y; DrawMap(character.ch_skin, current_map_name, character.ch_move); break;
+	case DOWN: if ((character.ch_x < height - 2) && (current_draw_map[character.ch_x + 1][character.ch_y] == ' ')) ++character.ch_x; DrawMap(character.ch_skin, current_map_name, character.ch_move); break;
 	}
 	//отсанавливаем персонажа
 	character.ch_move = STOP;
